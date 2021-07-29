@@ -65,6 +65,7 @@
 
 #define MESSAGE_MAX_LEN    256
 #define ERROR_MAX_LEN      20
+#define WORKING_BUFFER_LEN 4096
 
 
 //-----------------------------------------------------------------------------
@@ -81,24 +82,36 @@ FIL file;       //FFat File Object
 FRESULT err;    //FFat Result (Struct)
 FILINFO fno;    //FFat File Information Object
 DIR dir;        //FFat Directory Object
-TCHAR message[MESSAGE_MAX_LEN], filename[MESSAGE_MAX_LEN], volume_label[24], volume = '0';
+TCHAR message[MESSAGE_MAX_LEN], directory[MESSAGE_MAX_LEN], cwd[MESSAGE_MAX_LEN], filename[MESSAGE_MAX_LEN], volume_label[24], volume = '0';
 TCHAR *FF_ERRORS[ERROR_MAX_LEN];
 DWORD clusters_free = 0, sectors_free = 0, sectors_total = 0, volume_sn = 0;
 UINT bytes_written = 0, bytes_read = 0, mounted = 0;
+BYTE work[WORKING_BUFFER_LEN];
+static char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-#'?!";
 mxc_gpio_cfg_t SDPowerEnablePin = MAX32666_SD_EN_PIN;
 
 
 //-----------------------------------------------------------------------------
 // Local function declarations
 //-----------------------------------------------------------------------------
+static void sdcard_generateMessage(unsigned length);
 static int sdcard_mount(void);
 static int sdcard_umount(void);
+static int sdcard_formatSDHC(void);
 static int sdcard_example(void);
 
 
 //-----------------------------------------------------------------------------
 // Function definitions
 //-----------------------------------------------------------------------------
+static void sdcard_generateMessage(unsigned length)
+{
+    for(int i = 0 ; i < length; i++) {
+        /*Generate some random data to put in file*/
+        message[i] =  charset[rand() % (sizeof(charset)-1)];
+    }
+}
+
 static int sdcard_mount(void)
 {
     fs = &fs_obj;
@@ -110,6 +123,8 @@ static int sdcard_mount(void)
         PR_INFO("SD card mounted.");
         mounted = 1;
     }
+
+    f_getcwd(cwd, sizeof(cwd));                         //Set the Current working directory
 
     return err;
 }
@@ -127,11 +142,112 @@ static int sdcard_umount(void)
     return err;
 }
 
+static int sdcard_formatSDHC(void)
+{
+    printf("FORMATTING DRIVE\n");
+
+    if((err = f_mkfs("", FM_ANY, 0, work, sizeof(work))) != FR_OK) {    //Format the default drive to FAT32
+        PR_ERROR("Error formatting SD card: %s", FF_ERRORS[err]);
+    }
+    else {
+        PR_INFO("Drive formatted.");
+    }
+
+    sdcard_mount();
+
+    if((err = f_setlabel("MAXIM")) != FR_OK){
+        PR_ERROR("Error setting drive label: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+    }
+
+    sdcard_umount();
+
+    return err;
+}
+
 static int sdcard_example(void)
 {
+    unsigned int length = 256;
+
+    if((err = sdcard_formatSDHC()) != FR_OK) {
+        PR_ERROR("Error Formatting SD Card: %s", FF_ERRORS[err]);
+        return err;
+    }
+
     //open SD Card
     if((err = sdcard_mount()) != FR_OK) {
         PR_ERROR("Error opening SD Card: %s", FF_ERRORS[err]);
+        return err;
+    }
+    printf("SD Card Opened!\n");
+
+    if((err = f_setlabel("MAXIM")) != FR_OK){
+        PR_ERROR("Error setting drive label: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+
+    if((err = f_getfree(&volume,&clusters_free, &fs)) != FR_OK) {
+        PR_ERROR("Error finding free size of card: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+
+    if((err = f_getlabel(&volume,volume_label,&volume_sn)) != FR_OK){
+        PR_ERROR("Error reading drive label: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+
+    if((err = f_open(&file, "0:HelloWorld.txt", FA_CREATE_ALWAYS|FA_WRITE)) != FR_OK){
+        PR_ERROR("Error opening file: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+    PR_INFO("File opened!");
+
+    sdcard_generateMessage(length);
+
+    if((err = f_write(&file, &message, length, &bytes_written)) != FR_OK){
+        PR_ERROR("Error writing file: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+    PR_INFO("%d bytes written to file!", bytes_written);
+
+    if((err = f_close(&file)) != FR_OK){
+        PR_ERROR("Error closing file: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+    PR_INFO("File Closed!");
+
+    if((err = f_chmod("HelloWorld.txt", 0, AM_RDO | AM_ARC | AM_SYS | AM_HID)) != FR_OK){
+        PR_ERROR("Error in chmod: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+
+    err = f_stat("MaximSDHC", &fno);
+    if(err == FR_NO_FILE) {
+        PR_INFO("Creating Directory...");
+        if((err = f_mkdir("MaximSDHC")) != FR_OK) {
+            PR_ERROR("Error creating directory: %s", FF_ERRORS[err]);
+            f_mount(NULL, "", 0);
+            return err;
+        }
+    }
+
+    PR_INFO("Renaming File...");
+    if((err = f_rename("0:HelloWorld.txt", "0:MaximSDHC/HelloMaxim.txt")) != FR_OK){ //cr: clearify 0:file notation
+        PR_ERROR("Error moving file: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
+        return err;
+    }
+
+    if((err = f_chdir("/MaximSDHC")) != FR_OK){
+        PR_ERROR("Error in chdir: %s", FF_ERRORS[err]);
+        f_mount(NULL, "", 0);
         return err;
     }
 
@@ -160,7 +276,8 @@ static int sdcard_example(void)
     PR_INFO("File Closed!\n");
 
     //unmount SD Card
-    if((err = sdcard_umount()) != FR_OK){
+    //f_mount(fs, "", 0);
+    if((err = f_mount(NULL, "", 0)) != FR_OK){
         PR_ERROR("Error unmounting volume: %s", FF_ERRORS[err]);
         return err;
     }
@@ -195,8 +312,8 @@ int sdcard_init(void)
     srand(12347439);
 
     // Enable Power To Card
-    MXC_GPIO_Config(&SDPowerEnablePin);
     GPIO_CLR(SDPowerEnablePin);
+    MXC_GPIO_Config(&SDPowerEnablePin);
 
     // Initialize SDHC peripheral
     cfg.bus_voltage = MAX32666_SD_BUS_VOLTAGE;
@@ -206,6 +323,9 @@ int sdcard_init(void)
         PR_ERROR("Unable to initialize SDHC driver.");
         return 1;
     }
+
+    // wait for card to be inserted
+    for (int i = 0; !MXC_SDHC_Card_Inserted() && (i < 100000); i++);
 
     // Check if card is inserted
     if (!MXC_SDHC_Card_Inserted()) {
@@ -238,7 +358,7 @@ int sdcard_init(void)
         MXC_SDHC_Set_Clock_Config(0);
     }
 
-if (1) { // TODO: remove
+if (0) { // TODO: remove
     if(sdcard_example() != E_NO_ERROR) {
         PR_ERROR("SD CARD example failed");
         return 1;

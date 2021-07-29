@@ -75,6 +75,12 @@ export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
 SRCS  = max32666_main.c
+#SRCS += max32666_i2c.c
+#SRCS += max32666_expander.c
+#SRCS += max32666_fonts.c
+#SRCS += max32666_pmic.c
+#SRCS += max32666_lcd.c
+#SRCS += max32666_sdcard.c
 SRCS += board.c
 SRCS += hal_sys.c
 ifeq ($(MAKECMDGOALS),sla)
