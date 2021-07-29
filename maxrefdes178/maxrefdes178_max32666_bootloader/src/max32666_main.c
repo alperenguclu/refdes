@@ -52,7 +52,6 @@
 //#include "max32666_i2c.h"
 //#include "max32666_lcd.h"
 //#include "max32666_pmic.h"
-#include "max32666_max20303.h"
 //#include "max32666_sdcard.h"
 #include "maxrefdes178_definitions.h"
 #include "maxrefdes178_version.h"
