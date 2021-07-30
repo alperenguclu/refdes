@@ -55,6 +55,7 @@
 // Function declarations
 //-----------------------------------------------------------------------------
 int sdcard_init(void);
-
+int sdcard_uninit(void);
+int sdcard_get_dirs(char dir_list[MAX32666_BL_MAX_DIR_NUMBER][MAX32666_BL_MAX_DIR_LEN], int *dir_count);
 
 #endif /* _MAX32666_SDCARD_H_ */

@@ -80,7 +80,7 @@ SRCS += max32666_expander.c
 SRCS += max32666_fonts.c
 SRCS += max32666_pmic.c
 SRCS += max32666_lcd.c
-#SRCS += max32666_sdcard.c
+SRCS += max32666_sdcard.c
 SRCS += max32666_spi_dma.c
 SRCS += board.c
 SRCS += hal_sys.c
@@ -154,7 +154,11 @@ PERIPH_DRIVER_DIR=$(LIBS_DIR)/PeriphDrivers
 include $(PERIPH_DRIVER_DIR)/periphdriver.mk
 export PERIPH_DRIVER_DIR
 
-# TODO: Add USB based solution
+# Include SDHC and FAT32 Library
+SDHC_DRIVER_DIR=$(LIBS_DIR)/SDHC
+FAT32_DRIVER_DIR=$(SDHC_DRIVER_DIR)/ff13
+include $(FAT32_DRIVER_DIR)/fat32.mk
+include $(SDHC_DRIVER_DIR)/sdhc.mk
 
 # Remove MX25 related files from bootloader as it does not utilize the on-board flash at all
 TMP_SRCS := $(SRCS)

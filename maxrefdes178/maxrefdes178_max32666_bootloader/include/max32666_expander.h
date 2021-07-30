@@ -84,5 +84,7 @@ int expander_read_io(uint8_t *input);
 int expander_set_io(uint8_t mask);
 int expander_invoke_video_bootloader(void);
 int expander_invoke_audio_bootloader(void);
+void button_y_int_handler(int state);
+
 
 #endif /* _MAX32666_EXPANDER_H_ */

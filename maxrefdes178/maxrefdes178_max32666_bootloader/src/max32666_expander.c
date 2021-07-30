@@ -68,7 +68,6 @@ static volatile int expander_int_flag = 0;
 //-----------------------------------------------------------------------------
 // Local function declarations
 //-----------------------------------------------------------------------------
-static void button_y_int_handler(int state);
 
 
 //-----------------------------------------------------------------------------
@@ -127,15 +126,6 @@ int expander_init(void)
     return E_NO_ERROR;
 }
 
-static void button_y_int_handler(int state)
-{
-    if (state) {
-        PR_DEBUG("button Y released");
-    } else {
-        PR_INFO("button Y pressed");
-    }
-}
-
 int expander_worker(void)
 {
     int err;
@@ -154,12 +144,12 @@ int expander_worker(void)
     if (buff[1] & EXPANDER_INPUT_BUTTON_Y) {
         button_y_int_handler(!!(buff[0] & EXPANDER_INPUT_BUTTON_Y));
     }
-    if (buff[1] & EXPANDER_INPUT_ALERT_PMIC) {
-        pmic_alert_int_handler(!!(buff[0] & EXPANDER_INPUT_ALERT_PMIC));
-    }
-    if (buff[1] & EXPANDER_INPUT_INT_PMIC) {
-        pmic_int_handler(!!(buff[0] & EXPANDER_INPUT_INT_PMIC));
-    }
+//    if (buff[1] & EXPANDER_INPUT_ALERT_PMIC) {
+//        pmic_alert_int_handler(!!(buff[0] & EXPANDER_INPUT_ALERT_PMIC));
+//    }
+//    if (buff[1] & EXPANDER_INPUT_INT_PMIC) {
+//        pmic_int_handler(!!(buff[0] & EXPANDER_INPUT_INT_PMIC));
+//    }
 
     return E_NO_ERROR;
 }

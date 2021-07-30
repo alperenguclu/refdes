@@ -320,6 +320,11 @@
 // MAX78000 VIDEO SLEEP DEFER TIMER
 #define MAX78000_VIDEO_SLEEP_DEFER_TMR     MXC_TMR2
 
+/*** MAX32666 BOOTLOADER ***/
+#define MAX32666_BL_MAX_DIR_LEN          34
+#define MAX32666_BL_MAX_DIR_NUMBER       22
+
+
 //-----------------------------------------------------------------------------
 // Typedefs
 //-----------------------------------------------------------------------------
