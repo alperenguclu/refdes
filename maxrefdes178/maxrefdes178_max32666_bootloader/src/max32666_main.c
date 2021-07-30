@@ -48,10 +48,11 @@
 #include <tmr.h>
 
 #include "max32666_debug.h"
-//#include "max32666_expander.h"
-//#include "max32666_i2c.h"
-//#include "max32666_lcd.h"
-//#include "max32666_pmic.h"
+#include "max32666_expander.h"
+#include "max32666_fonts.h"
+#include "max32666_i2c.h"
+#include "max32666_lcd.h"
+#include "max32666_pmic.h"
 //#include "max32666_sdcard.h"
 #include "maxrefdes178_definitions.h"
 #include "maxrefdes178_version.h"
@@ -84,6 +85,8 @@ extern int _boot_mode;
 extern int _boot_mem_end;
 extern int _boot_mem_len;
 
+uint8_t lcd_buff[115200] = {0};
+
 //-----------------------------------------------------------------------------
 // Local function declarations
 //-----------------------------------------------------------------------------
@@ -94,42 +97,50 @@ static void run_application(void);
 //-----------------------------------------------------------------------------
 int main(void)
 {
-//    int ret = 0;
+    int ret = 0;
 
     // Set PORT1 and PORT2 rail to VDDIO
     MXC_GPIO0->vssel =  0x00;
     MXC_GPIO1->vssel =  0x00;
 
-    PR_INFO("maxrefdes178_max32666 bootloader core0 v%d.%d.%d [%s]", S_VERSION_MAJOR, S_VERSION_MINOR, S_VERSION_BUILD, S_BUILD_TIMESTAMP);
+    PR_INFO("maxrefdes178_max32666 bootloader v%d.%d.%d [%s]", S_VERSION_MAJOR, S_VERSION_MINOR, S_VERSION_BUILD, S_BUILD_TIMESTAMP);
 
-//    ret = i2c_master_init();
-//    if (ret != E_NO_ERROR) {
-//        PR_ERROR("i2c_init failed %d", ret);
-//        MXC_Delay(MXC_DELAY_MSEC(100));
-//        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-//    }
-//
-//    ret = expander_init();
-//    if (ret != E_NO_ERROR) {
-//        PR_ERROR("expander_init failed %d", ret);
-//        MXC_Delay(MXC_DELAY_MSEC(100));
-//        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-//    }
-//
-//    ret = pmic_init();
-//    if (ret != E_NO_ERROR) {
-//        PR_ERROR("pmic_init failed %d", ret);
-//        MXC_Delay(MXC_DELAY_MSEC(100));
-//        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-//    }
-//
-//    ret = lcd_init();
-//    if (ret != E_NO_ERROR) {
-//        PR_ERROR("lcd_init failed %d", ret);
-//        pmic_led_red(1);
-//        MXC_Delay(MXC_DELAY_MSEC(100));
-//        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-//    }
+    ret = i2c_master_init();
+    if (ret != E_NO_ERROR) {
+        PR_ERROR("i2c_init failed %d", ret);
+        MXC_Delay(MXC_DELAY_MSEC(100));
+        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+    }
+
+    ret = expander_init();
+    if (ret != E_NO_ERROR) {
+        PR_ERROR("expander_init failed %d", ret);
+        MXC_Delay(MXC_DELAY_MSEC(100));
+        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+    }
+
+    ret = pmic_init();
+    if (ret != E_NO_ERROR) {
+        PR_ERROR("pmic_init failed %d", ret);
+        MXC_Delay(MXC_DELAY_MSEC(100));
+        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+    }
+
+    ret = lcd_init();
+    if (ret != E_NO_ERROR) {
+        PR_ERROR("lcd_init failed %d", ret);
+        MXC_Delay(MXC_DELAY_MSEC(100));
+        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+    }
+
+    fonts_putStringCentered(3, "MRD178 Bootlaoder", &Font_7x10, YELLOW, lcd_buff);
+    lcd_drawImage(lcd_buff);
+
+    pmic_led_blue(1);
+    pmic_led_red(1);
+
+
+    MXC_Delay(MXC_DELAY_SEC(3)); // remove this
 
     /*
      * TODO: Process files in SDCard to perform firmware upgrade

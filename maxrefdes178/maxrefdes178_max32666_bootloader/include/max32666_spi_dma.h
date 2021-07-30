@@ -33,46 +33,34 @@
  *******************************************************************************
  */
 
-#ifndef _MAX32666_DEBUG_H_
-#define _MAX32666_DEBUG_H_
+#ifndef _MAX32666_SPI_DMA_H_
+#define _MAX32666_SPI_DMA_H_
 
 //-----------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------
-#include <stdio.h>
-#include "maxrefdes178_definitions.h"
-
-
-//-----------------------------------------------------------------------------
-// Global variables
-//-----------------------------------------------------------------------------
+#include <dma.h>
+#include <spi.h>
 
 
 //-----------------------------------------------------------------------------
 // Defines
 //-----------------------------------------------------------------------------
-#define PR_DEBUG(fmt, args...)  if(0) { \
-    printf("D[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
-    fflush(stdout); \
-}
 
-#define PR_INFO(fmt, args...)  if(1) { \
-    printf("I[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
-    fflush(stdout); \
-}
 
-#define PR_WARN(fmt, args...)  if(1) { \
-    printf("W[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
-    fflush(stdout); \
-}
 
-#define PR_ERROR(fmt, args...)  if(1) { \
-    printf("E[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
-    fflush(stdout); \
-}
+//-----------------------------------------------------------------------------
+// Typedefs
+//-----------------------------------------------------------------------------
 
-#define PR(fmt, args...) \
-    printf(fmt , ##args); \
-    fflush(stdout); \
 
-#endif /* _MAX32666_DEBUG_H_ */
+//-----------------------------------------------------------------------------
+// Function declarations
+//-----------------------------------------------------------------------------
+void spi_dma_int_handler(uint8_t ch, mxc_spi_regs_t *spi);
+int spi_dma_master_init(mxc_spi_regs_t *spi, sys_map_t map, uint32_t speed, uint8_t quad);
+int spi_dma(uint8_t ch, mxc_spi_regs_t *spi, uint8_t *data_out, uint8_t *data_in, uint32_t len, mxc_dma_reqsel_t reqsel, void (*callback)(void));
+int spi_dma_wait(uint8_t ch, mxc_spi_regs_t *spi);
+uint8_t spi_dma_busy_flag(uint8_t ch);
+
+#endif /* _MAX32666_SPI_DMA_H_ */

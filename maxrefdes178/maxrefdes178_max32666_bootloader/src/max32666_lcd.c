@@ -362,6 +362,11 @@ int lcd_init(void)
 {
     int ret;
 
+    ret = MXC_DMA_Init(MXC_DMA0);
+    if (ret != E_NO_ERROR) {
+        PR_ERROR("MXC_DMA_Init failed %d", ret);
+    }
+
     lcd_backlight(1, MAX32666_LCD_BACKLIGHT_HIGH);
 
     spi_deassert_cs();

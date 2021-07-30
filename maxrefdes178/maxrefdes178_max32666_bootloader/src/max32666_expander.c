@@ -38,6 +38,7 @@
 //-----------------------------------------------------------------------------
 #include <mxc_delay.h>
 #include <mxc_errors.h>
+#include <mxc_sys.h>
 
 #include "max32666_debug.h"
 #include "max32666_expander.h"
