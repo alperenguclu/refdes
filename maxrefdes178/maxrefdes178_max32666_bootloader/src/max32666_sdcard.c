@@ -142,7 +142,11 @@ int sdcard_get_dirs(char dir_list[MAX32666_BL_MAX_DIR_NUMBER][MAX32666_BL_MAX_DI
                 if (strcmp(fno.fname, "System Volume Information") == 0) {
                     continue;
                 }
+                if (*dir_count == MAX32666_BL_MAX_DIR_NUMBER) {
+                    break;
+                }
                 strncpy(dir_list[*dir_count], fno.fname, MAX32666_BL_MAX_DIR_LEN);
+                dir_list[*dir_count][MAX32666_BL_MAX_DIR_LEN - 1] = '\0';
                 *dir_count += 1;
             } else {                                       /* It is a file. */
                 //printf("file %s\n", fno.fname);

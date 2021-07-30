@@ -321,7 +321,7 @@
 #define MAX78000_VIDEO_SLEEP_DEFER_TMR     MXC_TMR2
 
 /*** MAX32666 BOOTLOADER ***/
-#define MAX32666_BL_MAX_DIR_LEN          34
+#define MAX32666_BL_MAX_DIR_LEN          (34 + 1)     // +1 for NULL terminator
 #define MAX32666_BL_MAX_DIR_NUMBER       22
 
 

@@ -209,8 +209,8 @@ int main(void)
 
             memset(lcd_buff, 0xff, sizeof(lcd_buff));
             fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
-            fonts_putString(3, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
-            fonts_putString(3, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
+            fonts_putString(1, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
+            fonts_putString(1, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
             lcd_drawImage(lcd_buff);
             break;
         }
