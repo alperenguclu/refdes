@@ -321,8 +321,13 @@
 #define MAX78000_VIDEO_SLEEP_DEFER_TMR     MXC_TMR2
 
 /*** MAX32666 BOOTLOADER ***/
-#define MAX32666_BL_MAX_DIR_LEN          (34 + 1)     // +1 for NULL terminator
-#define MAX32666_BL_MAX_DIR_NUMBER       22
+#define MAX32666_BL_MAX_DIR_LEN            (34 + 1)     // +1 for NULL terminator
+#define MAX32666_BL_MAX_DIR_NUMBER         22
+#define MAX32666_BL_MAX_FW_PATH_LEN        100
+#define MAX32666_BL_MAX32666_FW_NAME       "maxrefdes178_max32666"
+#define MAX32666_BL_MAX78000_VIDEO_FW_NAME "maxrefdes178_max78000_video"
+#define MAX32666_BL_MAX78000_AUDIO_FW_NAME "maxrefdes178_max78000_audio"
+#define MAX32666_BL_MAX32666_FW_EXTENSION  "msbl"
 
 
 //-----------------------------------------------------------------------------

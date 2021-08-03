@@ -83,6 +83,9 @@ extern int _boot_mode;
 extern int _boot_mem_end;
 extern int _boot_mem_len;
 char dir_list[MAX32666_BL_MAX_DIR_NUMBER][MAX32666_BL_MAX_DIR_LEN] = {0};
+char max32666_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN] = {0};
+char max78000_video_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN] = {0};
+char max78000_audio_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN] = {0};
 uint8_t lcd_buff[115200];
 static const mxc_gpio_cfg_t button_x_int_pin = MAX32666_BUTTON_X_INT_PIN;
 volatile int button_x_pressed = 0;
@@ -179,16 +182,19 @@ int main(void)
     }
 
     if (dir_count == 0) {
+        PR_ERROR("No folder found in SD card!");
         pmic_led_red(1);
         fonts_putString(1, 14, "No folder found in SD card!", &Font_7x10, RED, 0, 0, lcd_buff);
         lcd_drawImage(lcd_buff);
-        PR_ERROR("No folder found in SD card!");
         while(1);
     }
 
     pmic_led_blue(1);
 
     while (1) {
+        memset(lcd_buff, 0xff, sizeof(lcd_buff));
+        fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+
         expander_worker();
 
         if (button_x_pressed) {
@@ -207,19 +213,33 @@ int main(void)
         if (button_y_pressed) {
             button_y_pressed = 0;
 
-            memset(lcd_buff, 0xff, sizeof(lcd_buff));
-            fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
-            fonts_putString(1, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
-            fonts_putString(1, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
-            lcd_drawImage(lcd_buff);
-            break;
+            ret = sdcard_get_fw_paths(dir_list[selected], max32666_msbl_path, max78000_video_msbl_path, max78000_audio_msbl_path);
+            if (ret != E_NO_ERROR) {
+                PR_ERROR("Folder content is invalid! %s", dir_list[selected]);
+                memset(lcd_buff, 0xff, sizeof(lcd_buff));
+                fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+                fonts_putString(1, 20, "Folder content is invalid!", &Font_7x10, RED, 0, 0, lcd_buff);
+                fonts_putString(1, 40, dir_list[selected], &Font_7x10, RED, 0, 0, lcd_buff);
+                lcd_drawImage(lcd_buff);
+                MXC_Delay(MXC_DELAY_SEC(3));
+            } else {
+                PR_INFO("Firmware update started for: %s", dir_list[selected]);
+                memset(lcd_buff, 0xff, sizeof(lcd_buff));
+                fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+                fonts_putString(1, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
+                fonts_putString(1, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
+                lcd_drawImage(lcd_buff);
+                break;
+            }
         }
 
         lcd_drawImage(lcd_buff);
         MXC_Delay(MXC_DELAY_MSEC(100));
     }
 
-    PR_INFO("selected folder is %s", dir_list[selected]);
+    PR_INFO("%s", max32666_msbl_path);
+    PR_INFO("%s", max78000_video_msbl_path);
+    PR_INFO("%s", max78000_audio_msbl_path);
 
     MXC_Delay(MXC_DELAY_SEC(5)); // remove this
 

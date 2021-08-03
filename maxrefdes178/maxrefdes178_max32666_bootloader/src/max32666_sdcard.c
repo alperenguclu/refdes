@@ -145,17 +145,70 @@ int sdcard_get_dirs(char dir_list[MAX32666_BL_MAX_DIR_NUMBER][MAX32666_BL_MAX_DI
                 if (*dir_count == MAX32666_BL_MAX_DIR_NUMBER) {
                     break;
                 }
-                strncpy(dir_list[*dir_count], fno.fname, MAX32666_BL_MAX_DIR_LEN);
+                strncpy(dir_list[*dir_count], fno.fname, MAX32666_BL_MAX_DIR_LEN - 1);
                 dir_list[*dir_count][MAX32666_BL_MAX_DIR_LEN - 1] = '\0';
                 *dir_count += 1;
             } else {                                       /* It is a file. */
-                //printf("file %s\n", fno.fname);
+                PR_DEBUG("file %s", fno.fname);
             }
         }
         f_closedir(&dir);
     }
 
     return 0;
+}
+
+int sdcard_get_fw_paths(char *dir_path, char *max32666_msbl_path, char *max78000_video_msbl_path, char *max78000_audio_msbl_path)
+{
+    int max32666_found = 0;
+    int max78000_video_found = 0;
+    int max78000_audio_found = 0;
+
+    err = f_opendir(&dir, dir_path);                       /* Open the directory */
+    if (err == FR_OK) {
+        for (;;) {
+            err = f_readdir(&dir, &fno);                   /* Read a directory item */
+            if (err != FR_OK || fno.fname[0] == 0) break;  /* Break on error or end of dir */
+            if (fno.fattrib & AM_DIR) {                    /* It is a directory */
+                PR_DEBUG("dir %s", fno.fname);
+            } else {                                       /* It is a file. */
+                PR_INFO("file %s", fno.fname);
+
+                // Check extension
+                if (strncmp(fno.fname + strlen(fno.fname) - strlen(MAX32666_BL_MAX32666_FW_EXTENSION), MAX32666_BL_MAX32666_FW_EXTENSION, strlen(MAX32666_BL_MAX32666_FW_EXTENSION)) != 0) {
+                    continue;
+                }
+
+                // Check fw name
+                if (strncmp(fno.fname, MAX32666_BL_MAX32666_FW_NAME, strlen(MAX32666_BL_MAX32666_FW_NAME)) == 0) {
+                    max32666_found = 1;
+                    strcpy(max32666_msbl_path, dir_path);
+                    max32666_msbl_path[strlen(dir_path)] = '/';
+                    strncpy(max32666_msbl_path + strlen(dir_path) + 1, fno.fname, MAX32666_BL_MAX_FW_PATH_LEN - 2 - strlen(dir_path));
+                    max32666_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN - 1] = '\0';
+                } else if  (strncmp(fno.fname, MAX32666_BL_MAX78000_VIDEO_FW_NAME, strlen(MAX32666_BL_MAX78000_VIDEO_FW_NAME)) == 0) {
+                    max78000_video_found = 1;
+                    strcpy(max78000_video_msbl_path, dir_path);
+                    max78000_video_msbl_path[strlen(dir_path)] = '/';
+                    strncpy(max78000_video_msbl_path + strlen(dir_path) + 1, fno.fname, MAX32666_BL_MAX_FW_PATH_LEN - 2 - strlen(dir_path));
+                    max78000_video_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN - 1] = '\0';
+                } else if  (strncmp(fno.fname, MAX32666_BL_MAX78000_AUDIO_FW_NAME, strlen(MAX32666_BL_MAX78000_AUDIO_FW_NAME)) == 0) {
+                    max78000_audio_found = 1;
+                    strcpy(max78000_audio_msbl_path, dir_path);
+                    max78000_audio_msbl_path[strlen(dir_path)] = '/';
+                    strncpy(max78000_audio_msbl_path + strlen(dir_path) + 1, fno.fname, MAX32666_BL_MAX_FW_PATH_LEN - 2 - strlen(dir_path));
+                    max78000_audio_msbl_path[MAX32666_BL_MAX_FW_PATH_LEN - 1] = '\0';
+                }
+            }
+        }
+        f_closedir(&dir);
+    }
+
+    if (max32666_found && max78000_video_found && max78000_audio_found) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 int sdcard_init(void)
