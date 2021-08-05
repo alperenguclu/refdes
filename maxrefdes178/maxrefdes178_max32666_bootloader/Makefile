@@ -84,6 +84,10 @@ SRCS += max32666_sdcard.c
 SRCS += max32666_spi_dma.c
 SRCS += board.c
 SRCS += hal_sys.c
+SRCS += max32666_loader_int.c
+SRCS += max32666_loader.c
+SRCS += crc32.c
+SRCS += max32666_bl.c
 ifeq ($(MAKECMDGOALS),sla)
 SRCS += sla_header.c
 endif
@@ -129,9 +133,9 @@ PROJ_LDFLAGS += --use-linker-plugin --specs=nano.specs -Wl,--cref -Wl,--gc-secti
 #STARTUPFILE=start.S
 
 # Set MXC_OPTIMIZE to override the default optimization level
-MXC_OPTIMIZE_CFLAGS=-Ofast
+MXC_OPTIMIZE_CFLAGS=-Os
 # Use -Og for better debug
-#MXC_OPTIMIZE_CFLAGS=-Og
+#MXC_OPTIMIZE_CFLAGS=-O0 -g
 
 # Point this variable to a linker file to override the default file
 LINKER=$(TARGET_LC).ld

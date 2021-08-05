@@ -56,22 +56,22 @@
     fflush(stdout); \
 }
 
-#define PR_INFO(fmt, args...)  if(1) { \
+#define PR_INFO(fmt, args...)  if(0) { \
     printf("I[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
     fflush(stdout); \
 }
 
-#define PR_WARN(fmt, args...)  if(1) { \
+#define PR_WARN(fmt, args...)  if(0) { \
     printf("W[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
     fflush(stdout); \
 }
 
-#define PR_ERROR(fmt, args...)  if(1) { \
+#define PR_ERROR(fmt, args...)  if(0) { \
     printf("E[%-6s:%4d] " fmt "\r\n", S_MODULE_NAME, __LINE__, ##args); \
     fflush(stdout); \
 }
 
-#define PR(fmt, args...) \
+#define PR(fmt, args...) if(0) { \
     printf(fmt , ##args); \
     fflush(stdout); \
 

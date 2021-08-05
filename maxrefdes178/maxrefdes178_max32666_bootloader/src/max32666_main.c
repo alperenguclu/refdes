@@ -56,6 +56,9 @@
 #include "max32666_sdcard.h"
 #include "maxrefdes178_definitions.h"
 #include "maxrefdes178_version.h"
+#include "max32666_loader_int.h"
+#include "max32666_bl.h"
+#include "max32666_loader.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -121,136 +124,193 @@ int main(void)
     int ret = 0;
     int dir_count = 0;
     int selected = 0;
+    unsigned int x_pressed;
 
     // Set PORT1 and PORT2 rail to VDDIO
     MXC_GPIO0->vssel =  0x00;
     MXC_GPIO1->vssel =  0x00;
-
-    PR_INFO("maxrefdes178_max32666 bootloader v%d.%d.%d [%s]", S_VERSION_MAJOR, S_VERSION_MINOR, S_VERSION_BUILD, S_BUILD_TIMESTAMP);
-
-    // Init button X interrupt
     MXC_GPIO_Config(&button_x_int_pin);
-    MXC_GPIO_RegisterCallback(&button_x_int_pin, button_x_int_handler, NULL);
-    MXC_GPIO_IntConfig(&button_x_int_pin, MAX32666_BUTTON_X_INT_MODE);
-    MXC_GPIO_EnableInt(button_x_int_pin.port, button_x_int_pin.mask);
-    NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(button_x_int_pin.port)));
+    x_pressed = (MXC_GPIO_InGet (MXC_GPIO1, MAX32666_BUTTON_X_PIN)& MAX32666_BUTTON_X_PIN) ? FALSE : TRUE;
 
-    ret = i2c_master_init();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("i2c_init failed %d", ret);
-        MXC_Delay(MXC_DELAY_MSEC(100));
-        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-    }
+    if(x_pressed == TRUE)
+    {
+		loader_int_enable_bootloader_mode();
+		PR_INFO("maxrefdes178_max32666 bootloader v%d.%d.%d [%s]", S_VERSION_MAJOR, S_VERSION_MINOR, S_VERSION_BUILD, S_BUILD_TIMESTAMP);
 
-    ret = expander_init();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("expander_init failed %d", ret);
-        MXC_Delay(MXC_DELAY_MSEC(100));
-        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-    }
+		// Init button X interrupt
+		MXC_GPIO_RegisterCallback(&button_x_int_pin, button_x_int_handler, NULL);
+		MXC_GPIO_IntConfig(&button_x_int_pin, MAX32666_BUTTON_X_INT_MODE);
+		MXC_GPIO_EnableInt(button_x_int_pin.port, button_x_int_pin.mask);
+		NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(button_x_int_pin.port)));
 
-    ret = pmic_init();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("pmic_init failed %d", ret);
-        MXC_Delay(MXC_DELAY_MSEC(100));
-        MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
-    }
+		ret = i2c_master_init();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("i2c_init failed %d", ret);
+			MXC_Delay(MXC_DELAY_MSEC(100));
+			MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+		}
 
-    ret = lcd_init();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("lcd_init failed %d", ret);
-        pmic_led_red(1);
-    }
+		ret = expander_init();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("expander_init failed %d", ret);
+			MXC_Delay(MXC_DELAY_MSEC(100));
+			MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+		}
 
-    // Draw bootlaoder title
-    memset(lcd_buff, 0xff, sizeof(lcd_buff));
-    fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
 
-    ret = sdcard_init();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("sdcard_init failed %d", ret);
-        pmic_led_red(1);
-        fonts_putString(1, 14, "SD card not found!", &Font_7x10, RED, 0, 0, lcd_buff);
-        lcd_drawImage(lcd_buff);
-        while(1);
-    }
+		ret = pmic_init();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("pmic_init failed %d", ret);
+			MXC_Delay(MXC_DELAY_MSEC(100));
+			MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+		}
 
-    ret = sdcard_get_dirs(dir_list, &dir_count);
-    if (ret != E_NO_ERROR) {
-        pmic_led_red(1);
-        PR_ERROR("sdcard_get_dirs failed %d", ret);
-    }
+		ret = lcd_init();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("lcd_init failed %d", ret);
+			pmic_led_red(1);
+		}
 
-    if (dir_count == 0) {
-        PR_ERROR("No folder found in SD card!");
-        pmic_led_red(1);
-        fonts_putString(1, 14, "No folder found in SD card!", &Font_7x10, RED, 0, 0, lcd_buff);
-        lcd_drawImage(lcd_buff);
-        while(1);
-    }
+		// Draw bootlaoder title
+		memset(lcd_buff, 0xff, sizeof(lcd_buff));
+		fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
 
-    pmic_led_blue(1);
+		ret = sdcard_init();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("sdcard_init failed %d", ret);
+			pmic_led_red(1);
+			fonts_putString(1, 14, "SD card not found!", &Font_7x10, RED, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+			while(1);
+		}
 
-    while (1) {
-        memset(lcd_buff, 0xff, sizeof(lcd_buff));
-        fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+		ret = sdcard_get_dirs(dir_list, &dir_count);
+		if (ret != E_NO_ERROR) {
+			pmic_led_red(1);
+			PR_ERROR("sdcard_get_dirs failed %d", ret);
+		}
 
-        expander_worker();
+		if (dir_count == 0) {
+			PR_ERROR("No folder found in SD card!");
+			pmic_led_red(1);
+			fonts_putString(1, 14, "No folder found in SD card!", &Font_7x10, RED, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+			while(1);
+		}
 
-        if (button_x_pressed) {
-            button_x_pressed = 0;
-            selected = (selected + 1) % dir_count;
-        }
+		pmic_led_blue(1);
 
-        for (int i = 0; i < dir_count; i++) {
-            if (i == selected) {
-                fonts_putString(1, 14 + (i * 10), dir_list[i], &Font_7x10, GREEN, 0, 0, lcd_buff);
-            } else {
-                fonts_putString(1, 14 + (i * 10), dir_list[i], &Font_7x10, BLACK, 0, 0, lcd_buff);
-            }
-        }
 
-        if (button_y_pressed) {
-            button_y_pressed = 0;
+		while (1) {
+			memset(lcd_buff, 0xff, sizeof(lcd_buff));
+			fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
 
-            ret = sdcard_get_fw_paths(dir_list[selected], max32666_msbl_path, max78000_video_msbl_path, max78000_audio_msbl_path);
-            if (ret != E_NO_ERROR) {
-                PR_ERROR("Folder content is invalid! %s", dir_list[selected]);
-                memset(lcd_buff, 0xff, sizeof(lcd_buff));
-                fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
-                fonts_putString(1, 20, "Folder content is invalid!", &Font_7x10, RED, 0, 0, lcd_buff);
-                fonts_putString(1, 40, dir_list[selected], &Font_7x10, RED, 0, 0, lcd_buff);
-                lcd_drawImage(lcd_buff);
-                MXC_Delay(MXC_DELAY_SEC(3));
-            } else {
-                PR_INFO("Firmware update started for: %s", dir_list[selected]);
-                memset(lcd_buff, 0xff, sizeof(lcd_buff));
-                fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
-                fonts_putString(1, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
-                fonts_putString(1, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
-                lcd_drawImage(lcd_buff);
-                break;
-            }
-        }
+			expander_worker();
 
-        lcd_drawImage(lcd_buff);
-        MXC_Delay(MXC_DELAY_MSEC(100));
-    }
+			if (button_x_pressed) {
+				button_x_pressed = 0;
+				selected = (selected + 1) % dir_count;
+			}
 
-    PR_INFO("%s", max32666_msbl_path);
-    PR_INFO("%s", max78000_video_msbl_path);
-    PR_INFO("%s", max78000_audio_msbl_path);
+			for (int i = 0; i < dir_count; i++) {
+				if (i == selected) {
+					fonts_putString(1, 14 + (i * 10), dir_list[i], &Font_7x10, GREEN, 0, 0, lcd_buff);
+				} else {
+					fonts_putString(1, 14 + (i * 10), dir_list[i], &Font_7x10, BLACK, 0, 0, lcd_buff);
+				}
+			}
 
-    MXC_Delay(MXC_DELAY_SEC(5)); // remove this
+			if (button_y_pressed) {
+				button_y_pressed = 0;
 
-    ret = sdcard_uninit();
-    if (ret != E_NO_ERROR) {
-        PR_ERROR("sdcard_uninit failed %d", ret);
-        pmic_led_red(1);
-    }
+				ret = sdcard_get_fw_paths(dir_list[selected], max32666_msbl_path, max78000_video_msbl_path, max78000_audio_msbl_path);
+				if (ret != E_NO_ERROR) {
+					PR_ERROR("Folder content is invalid! %s", dir_list[selected]);
+					memset(lcd_buff, 0xff, sizeof(lcd_buff));
+					fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+					fonts_putString(1, 20, "Folder content is invalid!", &Font_7x10, RED, 0, 0, lcd_buff);
+					fonts_putString(1, 40, dir_list[selected], &Font_7x10, RED, 0, 0, lcd_buff);
+					lcd_drawImage(lcd_buff);
+					MXC_Delay(MXC_DELAY_SEC(3));
+				} else {
+					PR_INFO("Firmware update started for: %s", dir_list[selected]);
+					memset(lcd_buff, 0xff, sizeof(lcd_buff));
+					fonts_putString(31, 3, "MAXREFDES178 App Switcher", &Font_7x10, BLUE, 0, 0, lcd_buff);
+					fonts_putString(1, 20, "Firmware update started for:", &Font_7x10, BLACK, 0, 0, lcd_buff);
+					fonts_putString(1, 40, dir_list[selected], &Font_7x10, BROWN, 0, 0, lcd_buff);
+					lcd_drawImage(lcd_buff);
+					break;
+				}
+			}
 
-    Console_Shutdown();
-    run_application();
+			lcd_drawImage(lcd_buff);
+			MXC_Delay(MXC_DELAY_MSEC(100));
+		}
+
+
+		PR_INFO("%s", max32666_msbl_path);
+		PR_INFO("%s", max78000_video_msbl_path);
+		PR_INFO("%s", max78000_audio_msbl_path);
+
+		loader_int_spi_init();
+		loader_int_gpio_init();
+		bl_conf_struct_t plt;
+
+		plt.read     = loader_int_spi_read;
+		plt.write    = loader_int_spi_write;
+		plt.gpio_set = loader_int_gpio_set;
+		plt.delay_ms = loader_int_delay_ms;
+
+		loader_init(&plt);
+		loader_int_set_active_ss(S_SS_AUDIO);
+		ret = loader_flash_image(max78000_audio_msbl_path);
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("MAX78000 Audio FW Update Failed");
+			fonts_putString(1, 60, "MAX78000 Audio FW Update Failed", &Font_7x10, RED, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+			while(1);
+		} else {
+			PR_INFO("MAX78000 Audio FW Update OK");
+			fonts_putString(1, 60, "MAX78000 Audio FW Update OK", &Font_7x10, GREEN, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+		}
+		loader_int_set_active_ss(S_SS_VIDEO);
+		ret = loader_flash_image(max78000_video_msbl_path);
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("MAX78000 Video FW Update Failed");
+			fonts_putString(1, 80, "MAX78000 Video FW Update Failed", &Font_7x10, RED, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+			while(1);
+		} else {
+			PR_INFO("MAX78000 Video FW Update OK");
+			fonts_putString(1, 80, "MAX78000 Video FW Update OK", &Font_7x10, GREEN, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+		}
+		//Self programmer
+		ret = bl_load_from_sdcard(max32666_msbl_path);
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("MAX32666 FW Update Failed");
+			fonts_putString(1, 100, "MAX32666 FW Update Failed", &Font_7x10, RED, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+			while(1);
+		} else {
+			PR_INFO("MAX32666 FW Update OK");
+			fonts_putString(1, 100, "MAX32666 FW Update OK", &Font_7x10, GREEN, 0, 0, lcd_buff);
+			lcd_drawImage(lcd_buff);
+		}
+		ret = sdcard_uninit();
+		if (ret != E_NO_ERROR) {
+			PR_ERROR("sdcard_uninit failed %d", ret);
+			pmic_led_red(1);
+		}
+		MXC_SYS_Reset_Periph(MXC_SYS_RESET_SYSTEM);
+	} else
+	{
+		loader_int_disable_bootloader_mode();
+		Console_Shutdown();
+		run_application();
+	}
+
 
     return E_NO_ERROR;
 }
