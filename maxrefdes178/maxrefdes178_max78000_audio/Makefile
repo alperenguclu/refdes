@@ -67,6 +67,7 @@ CMSIS_ROOT=$(LIBS_DIR)/CMSIS
 export CMSIS_ROOT
 
 # LINKERFILE=$(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source/GCC/max78000_arm.ld
+LINKERFILE=maxrefdes178_max78000_audio.ld
 
 # Source files for this test (add path to VPATH below)
 SRCS  = max78000_audio_main.c
@@ -135,6 +136,7 @@ include $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source/$(COMPILER)/$(TARGET_LC).
 
 all:
 	arm-none-eabi-objcopy $(BUILD_DIR)/$(PROJECT).elf -R .sig -O binary $(BUILD_DIR)/$(PROJECT).bin
+	cd $(BUILD_DIR) && $(CURDIR)/../msblGenWin32.exe $(BUILD_DIR)/$(PROJECT).bin MAX78000 8192
 # 	$(CA_SIGN_BUILD) $(BUILD_DIR)/$(PROJECT).bin $(TEST_KEY)
 # 	arm-none-eabi-objcopy  $(BUILD_DIR)/$(PROJECT).elf --update-section .sig=$(BUILD_DIR)/$(PROJECT).bin.sig
 

@@ -207,6 +207,7 @@ distclean: clean libclean
 
 all:
 	arm-none-eabi-objcopy $(BUILD_DIR)/$(PROJECT).elf -R .sig -O binary $(BUILD_DIR)/$(PROJECT).bin
+	cd $(BUILD_DIR) && $(CURDIR)/../msblGenWin32.exe $(BUILD_DIR)/$(PROJECT).bin MAX32666 8192
 
 sla: all
 	@echo " "

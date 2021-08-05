@@ -42,7 +42,6 @@ MEMORY {
 }
 
 TARGET(binary) /* specify the file format of binary file */
-INPUT (embeddings.bin) /* bin file path */
 OUTPUT_FORMAT(default) /* restore the out file format */
 
 SECTIONS {
@@ -75,17 +74,6 @@ SECTIONS {
       KEEP(*(.bin_storage_img))
       _bin_end_ = .;
       . = ALIGN(4);
-    } > FLASH
-
-    /* FaceID embeddings database 32kB sector aligned  */
-    .embeddings_storage :
-    {
-      /* Align to the sector size */
-      . = ALIGN(0x2000);
-      _embeddings_start_ = .;
-      embeddings.bin
-      . = _embeddings_start_ + 0x8000;
-      _embeddings_end_ = .;
     } > FLASH
 
     .rom_code :
