@@ -133,9 +133,9 @@ PROJ_LDFLAGS += --use-linker-plugin --specs=nano.specs -Wl,--cref -Wl,--gc-secti
 #STARTUPFILE=start.S
 
 # Set MXC_OPTIMIZE to override the default optimization level
-MXC_OPTIMIZE_CFLAGS=-Os
 # Use -Og for better debug
-#MXC_OPTIMIZE_CFLAGS=-O0 -g
+MXC_OPTIMIZE_CFLAGS=-Os
+#MXC_OPTIMIZE_CFLAGS=-Og
 
 # Point this variable to a linker file to override the default file
 LINKER=$(TARGET_LC).ld

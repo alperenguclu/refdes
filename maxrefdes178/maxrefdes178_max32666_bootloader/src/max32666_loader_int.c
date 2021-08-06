@@ -49,7 +49,7 @@
 //
 #define SPI             MXC_SPI0
 #define SPI_IRQ         SPI0_IRQn
-#define SPI_SPEED       1000000
+#define SPI_SPEED       8000000
 
 //#define SPI_MASTERASYNC
 #define SPI_MASTERSYNC

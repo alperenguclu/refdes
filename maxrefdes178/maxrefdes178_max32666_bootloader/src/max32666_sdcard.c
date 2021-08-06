@@ -130,6 +130,8 @@ static int sdcard_umount(void)
     return err;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
 int sdcard_get_dirs(char dir_list[MAX32666_BL_MAX_DIR_NUMBER][MAX32666_BL_MAX_DIR_LEN], int *dir_count)
 {
     *dir_count = 0;
@@ -210,6 +212,7 @@ int sdcard_get_fw_paths(char *dir_path, char *max32666_msbl_path, char *max78000
         return -1;
     }
 }
+#pragma GCC diagnostic pop
 
 int sdcard_init(void)
 {

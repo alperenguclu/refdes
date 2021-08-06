@@ -106,7 +106,8 @@ static const mxc_gpio_cfg_t lcd_dc_pin = MAX32666_LCD_DC_PIN;
 static const mxc_gpio_cfg_t lcd_cs_pin = MAX32666_LCD_CS_PIN;
 static uint8_t lcd_x_shift = 0;
 static uint8_t lcd_y_shift = 0;
-
+uint8_t lcd_buff[115200];
+char line_str[80];
 
 //-----------------------------------------------------------------------------
 // Local function declarations
@@ -349,11 +350,11 @@ int lcd_drawImage(uint8_t *data)
     GPIO_SET(lcd_dc_pin);
     spi_assert_cs();
 
-    spi_dma(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI, data, NULL, (w * h * LCD_BYTE_PER_PIXEL), MAX32666_LCD_DMA_REQSEL_SPITX, spi_deassert_cs);
+//    spi_dma(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI, data, NULL, (w * h * LCD_BYTE_PER_PIXEL), MAX32666_LCD_DMA_REQSEL_SPITX, spi_deassert_cs);
 
-//    spi_dma(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI, data, NULL, (w * h * LCD_BYTE_PER_PIXEL), MAX32666_LCD_DMA_REQSEL_SPITX, NULL);
-//    spi_dma_wait(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI);
-//    spi_deassert_cs();
+    spi_dma(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI, data, NULL, (w * h * LCD_BYTE_PER_PIXEL), MAX32666_LCD_DMA_REQSEL_SPITX, NULL);
+    spi_dma_wait(MAX32666_LCD_DMA_CHANNEL, MAX32666_LCD_SPI);
+    spi_deassert_cs();
 
     return E_NO_ERROR;
 }

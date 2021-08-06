@@ -37,10 +37,14 @@
 #include <stdint.h>
 #include <ff.h>
 #include <sdhc_lib.h>
+#include <mxc_delay.h>
 
 #include "max32666_loader.h"
 #include "max32666_debug.h"
 #include "max32666_bl.h"
+#include "max32666_fonts.h"
+#include "max32666_lcd.h"
+
 
 /*******************************      DEFINES     ****************************/
 #define S_MODULE_NAME   "max32666_loader"
@@ -95,6 +99,7 @@ static int send_rcv(unsigned char *tx, int txLen, unsigned char *rx, int rxLen, 
 		if (ret == 0) {
 			if(txLen>2)
 			{
+			    MXC_Delay(15);
 				ret = g_plt_funcs.write(tx+2, txLen-2);
 				if (ret == 0) {
 					break;
@@ -117,6 +122,7 @@ static int send_rcv(unsigned char *tx, int txLen, unsigned char *rx, int rxLen, 
         	}
 
         	// read
+        	MXC_Delay(15);
         	ret = g_plt_funcs.read(rx, rxLen);
 
 			if ( (ret == 0) && (rx[0] != BL_RET_ERR_TRY_AGAIN) ) {
@@ -368,7 +374,7 @@ int loader_write_page(const char *page, unsigned int page_len)
 	return ret;
 }
 
-int loader_flash_image(const char* filename)
+int loader_flash_image(const char* filename, int video_audio)
 {
 	int ret;
 	int i;
@@ -438,6 +444,16 @@ int loader_flash_image(const char* filename)
 			return ret;
 		}
 		PR_INFO("Flashing page %d/%d  [SUCCESS]\r\n", i+1, header.numPages);
+
+		if (video_audio) { // MAX78000 Video
+		    sprintf(line_str, "MAX78000 Video FW %d/%d", i+1, header.numPages);
+		    fonts_putStringOver(1, 80, line_str, &Font_7x10, BLACK, 0, 0, lcd_buff);
+		    lcd_drawImage(lcd_buff);
+		} else { // MAX78000 Audio
+		    sprintf(line_str, "MAX78000 Audio FW %d/%d", i+1, header.numPages);
+		    fonts_putStringOver(1, 60, line_str, &Font_7x10, BLACK, 0, 0, lcd_buff);
+		    lcd_drawImage(lcd_buff);
+		}
     }
 
     loader_exit_bl_mode();

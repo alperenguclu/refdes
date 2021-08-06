@@ -411,6 +411,12 @@ void fonts_putString(uint16_t x, uint16_t y, const char *str, const FontDef *fon
     }
 }
 
+void fonts_putStringOver(uint16_t x, uint16_t y, const char *str, const FontDef *font, uint16_t color, uint8_t bg, uint16_t bgcolor, uint8_t *buff)
+{
+    memset(&buff[y * LCD_WIDTH * LCD_BYTE_PER_PIXEL], 0xff, font->height * LCD_WIDTH * LCD_BYTE_PER_PIXEL);
+    fonts_putString(x, y, str, font, color, bg, bgcolor, buff);
+}
+
 void fonts_putStringCentered(uint16_t y, const char *str, const FontDef *font, uint16_t color, uint8_t *buff)
 {
     uint16_t x = (LCD_WIDTH - (font->width * strlen(str))) / 2;

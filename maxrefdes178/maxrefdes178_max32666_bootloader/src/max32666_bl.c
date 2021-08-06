@@ -43,7 +43,8 @@
 #include "max32666_bl.h"
 #include "max32666_debug.h"
 #include "max32666_loader.h"
-#include "max32666_bl_security.h"
+#include "max32666_fonts.h"
+#include "max32666_lcd.h"
 #include "crc32.h"
 
 #define S_MODULE_NAME   "max32666_bl"
@@ -312,6 +313,10 @@ int bl_load_image(FIL *file)
 			return -3;
 		}
 		currentPage++;
+
+        sprintf(line_str, "MAX32666 FW %d/%d", currentPage - startPage, header.numPages);
+        fonts_putStringOver(1, 100, line_str, &Font_7x10, BLACK, 0, 0, lcd_buff);
+        lcd_drawImage(lcd_buff);
 	}
 
 	flc_uninit();
@@ -348,8 +353,6 @@ int bl_load_from_sdcard(const char* filename)
         return err;
     }
     PR_INFO("File Closed!\n");
-
-
 
     return 0;
 }

@@ -85,7 +85,8 @@ int loader_set_num_pages(int page_num);
 int loader_set_iv(unsigned char *iv);
 int loader_set_auth(unsigned char *auth);
 int loader_write_page(const char *page, unsigned int page_len);
-int loader_flash_image(const char* filename);
+int loader_flash_image(const char* filename, int video_audio);
+
 
 // Bootloader configuration section
 int loader_get_target_configure(const char *target_bl_version, void *bl_cfg_struct);
